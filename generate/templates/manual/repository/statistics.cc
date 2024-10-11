@@ -42,7 +42,7 @@ private:
 
 /**
  * CommitsGraph::AddNode
- * 
+ *
  * \param oidStr oid of the commit object to add.
  * \param parents oids of the commit's parents.
  */
@@ -74,7 +74,7 @@ void CommitsGraph::AddNode(const std::string &oidStr, const std::vector<std::str
 /**
  * CommitsGraph::CalculateMaxDepth
  * \return Calculated maximum depth of the tree.
- * 
+ *
  * Uses iterative algorithm to count levels.
  * Considers multiple initial commits.
  * Considers that children of one level can have multiple parents, hence we insert unique children
@@ -83,7 +83,7 @@ void CommitsGraph::AddNode(const std::string &oidStr, const std::vector<std::str
  * multiple times, we only add a child when the last parent (parentsLeft) inserts it. This is
  * actually what makes the algorithm fast.
  * Recursive algorithm avoided to prevent stack overflow in case of excessive levels in the tree.
- * 
+ *
  * Explanation of the algorithm:
  * once the graph is built with the commit history, `CalculateMaxDepth()` counts the maximum number
  * of levels from any of the roots to any of the leaves, which gives us the maximum depth
@@ -125,7 +125,7 @@ uint32_t CommitsGraph::CalculateMaxDepth()
 
 /**
  * CommitsGraph::addParentNode
- * 
+ *
  * \param oidParentStr oid of the parent commit to add.
  * \param child Child of the parent commit being added.
  */
@@ -206,13 +206,6 @@ struct OdbObjectsData
   static constexpr uint32_t kUnreachable = 0;
 
   struct CommitInfo {
-    CommitInfo() = default;
-    ~CommitInfo() = default;
-    CommitInfo(const CommitInfo &other) = delete;
-    CommitInfo(CommitInfo &&other) = default;
-    CommitInfo& operator=(const CommitInfo &other) = delete;
-    CommitInfo& operator=(CommitInfo &&other) = default;
-
     std::string oidTree {};
     size_t size {0};
     std::vector<std::string> parents {};
@@ -222,13 +215,6 @@ struct OdbObjectsData
   };
 
   struct TreeInfoAndStats {
-    TreeInfoAndStats() = default;
-    ~TreeInfoAndStats() = default;
-    TreeInfoAndStats(const TreeInfoAndStats &other) = delete;
-    TreeInfoAndStats(TreeInfoAndStats &&other) = default;
-    TreeInfoAndStats& operator=(const TreeInfoAndStats &other) = delete;
-    TreeInfoAndStats& operator=(TreeInfoAndStats &&other) = default;
-
     size_t size {0};
     size_t numEntries {0};
     std::vector<std::string> entryBlobs {};
@@ -241,13 +227,6 @@ struct OdbObjectsData
   };
 
   struct BlobInfo {
-    BlobInfo() = default;
-    ~BlobInfo() = default;
-    BlobInfo(const BlobInfo &other) = delete;
-    BlobInfo(BlobInfo &&other) = default;
-    BlobInfo& operator=(const BlobInfo &other) = delete;
-    BlobInfo& operator=(BlobInfo &&other) = default;
-
     size_t size {0};
     // number of sources from which a blob can be reached:
     // a tree's entry, or a tag
@@ -256,13 +235,6 @@ struct OdbObjectsData
 
   struct TagInfo {
     static constexpr uint32_t kUnsetDepth = 0;
-
-    TagInfo() = default;
-    ~TagInfo() = default;
-    TagInfo(const TagInfo &other) = delete;
-    TagInfo(TagInfo &&other) = default;
-    TagInfo& operator=(const TagInfo &other) = delete;
-    TagInfo& operator=(TagInfo &&other) = default;
 
     std::string oidTarget {};
     git_object_t typeTarget {GIT_OBJECT_INVALID};
@@ -338,7 +310,7 @@ public:
   WorkItemOid(WorkItemOid &&other) = delete;
   WorkItemOid& operator=(const WorkItemOid &other) = delete;
   WorkItemOid& operator=(WorkItemOid &&other) = delete;
-  
+
   const git_oid& GetOid() const { return m_oid; }
 
 private:
@@ -478,7 +450,7 @@ bool WorkerStoreOdbData::Execute(std::unique_ptr<WorkItem> &&work)
 
       // obtain tree data and calculate statistics for only this tree (not recursively)
       OdbObjectsData::TreeInfoAndStats treeInfoAndStats = thisTreeInfoAndStats(tree, size, numEntries);
-     
+
       { // lock
         std::lock_guard<std::mutex> lock(m_odbObjectsData->infoMutex.trees);
 
@@ -493,7 +465,7 @@ bool WorkerStoreOdbData::Execute(std::unique_ptr<WorkItem> &&work)
     {
       git_blob *blob = (git_blob*)target;
       const size_t size = git_blob_rawsize(blob);
-      OdbObjectsData::BlobInfo blobInfo {size, OdbObjectsData::kUnreachable};
+      OdbObjectsData::BlobInfo blobInfo(size, OdbObjectsData::kUnreachable);
 
       { // lock
         std::lock_guard<std::mutex> lock(m_odbObjectsData->infoMutex.blobs);
@@ -536,9 +508,9 @@ bool WorkerStoreOdbData::Execute(std::unique_ptr<WorkItem> &&work)
 
 /**
  * WorkerStoreOdbData::thisTreeInfoAndStats
- * 
+ *
  * Obtain tree data and calculate the part of this tree's statistics that each thread can do.
- * 
+ *
  * \param tree tree to get data from and calculate partial statistics of.
  * \param size tree size, to be added to the final result.
  * \param numEntries number of entries of this tree.
@@ -590,7 +562,7 @@ OdbObjectsData::TreeInfoAndStats WorkerStoreOdbData::thisTreeInfoAndStats(const 
           reinterpret_cast<const char *>(te_oid->id), GIT_OID_RAWSZ);
       }
         break;
-        
+
       case GIT_OBJECT_TREE:
       {
         // We store tree's name length to compare in posterior stage, after threads work
@@ -603,7 +575,7 @@ OdbObjectsData::TreeInfoAndStats WorkerStoreOdbData::thisTreeInfoAndStats(const 
           teNameLen));
       }
         break;
-        
+
       default:
         break;
     }
@@ -625,7 +597,7 @@ public:
   WorkItemOidStrType(WorkItemOidStrType &&other) = delete;
   WorkItemOidStrType& operator=(const WorkItemOidStrType &other) = delete;
   WorkItemOidStrType& operator=(WorkItemOidStrType &&other) = delete;
-  
+
   void* GetObjectInfo() const { return m_objectInfo; }
   const git_object_t& GetOidType() const { return m_oid_type; }
 
@@ -702,7 +674,7 @@ void WorkerReachCounter::setReachabilityFromTags(void *objectInfo)
     {
       OdbObjectsData::iterCommitInfo itCommitInfo =
       m_odbObjectsData->commits.info.find(tagInfo->oidTarget);
-    
+
       if (itCommitInfo != m_odbObjectsData->commits.info.end()) {
         { // lock
           std::lock_guard<std::mutex> lock(m_odbObjectsData->infoMutex.commits);
@@ -716,7 +688,7 @@ void WorkerReachCounter::setReachabilityFromTags(void *objectInfo)
     {
       OdbObjectsData::iterTreeInfo itTreeInfo =
       m_odbObjectsData->trees.info.find(tagInfo->oidTarget);
-    
+
       if (itTreeInfo != m_odbObjectsData->trees.info.end()) {
         { // lock
           std::lock_guard<std::mutex> lock(m_odbObjectsData->infoMutex.trees);
@@ -729,7 +701,7 @@ void WorkerReachCounter::setReachabilityFromTags(void *objectInfo)
     {
       OdbObjectsData::iterBlobInfo itBlobInfo =
       m_odbObjectsData->blobs.info.find(tagInfo->oidTarget);
-    
+
       if (itBlobInfo != m_odbObjectsData->blobs.info.end()) {
         { // lock
           std::lock_guard<std::mutex> lock(m_odbObjectsData->infoMutex.blobs);
@@ -742,7 +714,7 @@ void WorkerReachCounter::setReachabilityFromTags(void *objectInfo)
     {
       OdbObjectsData::iterTagInfo itTargetTagInfo =
       m_odbObjectsData->tags.info.find(tagInfo->oidTarget);
-    
+
       if (itTargetTagInfo != m_odbObjectsData->tags.info.end()) {
         { // lock
           std::lock_guard<std::mutex> lock(m_odbObjectsData->infoMutex.tags);
@@ -769,7 +741,7 @@ void WorkerReachCounter::setReachabilityFromCommits(void *objectInfo)
   for (size_t i = 0; i < numParents; ++i) {
     OdbObjectsData::iterCommitInfo itParentCommitInfo =
       m_odbObjectsData->commits.info.find(commitInfo->parents.at(i));
-    
+
     if (itParentCommitInfo != m_odbObjectsData->commits.info.end()) {
       { // lock
         std::lock_guard<std::mutex> lock(m_odbObjectsData->infoMutex.commits);
@@ -781,7 +753,7 @@ void WorkerReachCounter::setReachabilityFromCommits(void *objectInfo)
   // add 1 to its tree's reachability
   OdbObjectsData::iterTreeInfo itCommitTreeInfo =
     m_odbObjectsData->trees.info.find(commitInfo->oidTree);
-  
+
   if (itCommitTreeInfo != m_odbObjectsData->trees.info.end()) {
     { // lock
       std::lock_guard<std::mutex> lock(m_odbObjectsData->infoMutex.trees);
@@ -802,7 +774,7 @@ void WorkerReachCounter::setReachabilityFromTrees(void *objectInfo)
   // set entry blobs' reachability
   for (auto &blob : treeInfo->entryBlobs) {
     OdbObjectsData::iterBlobInfo itBlobInfo = m_odbObjectsData->blobs.info.find(blob);
-    
+
     if (itBlobInfo != m_odbObjectsData->blobs.info.end()) {
       { // lock
         std::lock_guard<std::mutex> lock(m_odbObjectsData->infoMutex.blobs);
@@ -814,7 +786,7 @@ void WorkerReachCounter::setReachabilityFromTrees(void *objectInfo)
   // set entry trees' reachability
   for (auto &treeNameLen : treeInfo->entryTreesNameLen) {
     OdbObjectsData::iterTreeInfo itTreeInfo = m_odbObjectsData->trees.info.find(treeNameLen.first);
-    
+
     if (itTreeInfo != m_odbObjectsData->trees.info.end()) {
       { // lock
         std::lock_guard<std::mutex> lock(m_odbObjectsData->infoMutex.trees);
@@ -987,7 +959,7 @@ int RepoAnalysis::storeObjectsInfo()
   }
 
   // initialize worker pool
-  WorkerPool<WorkerStoreOdbData,WorkItemOid> workerPool {};  
+  WorkerPool<WorkerStoreOdbData,WorkItemOid> workerPool {};
   workerPool.Init(workers);
 
   if ((errorCode = git_odb_foreach(odb, forEachOdbCb, &workerPool)) != GIT_OK) {
@@ -1118,7 +1090,7 @@ bool RepoAnalysis::setObjectsReachability()
   }
 
   // initialize worker pool
-  WorkerPool<WorkerReachCounter,WorkItemOidStrType> workerPool {};  
+  WorkerPool<WorkerReachCounter,WorkItemOidStrType> workerPool {};
   workerPool.Init(workers);
 
   // NOTE: avoid queueing same type of objects in a row, so that different mutex can be used concurrently
@@ -1174,7 +1146,7 @@ void RepoAnalysis::setReachabilityFromRefs()
       {
         OdbObjectsData::iterCommitInfo itCommitInfo =
         m_odbObjectsData.commits.info.find(ref.first);
-      
+
         if (itCommitInfo != m_odbObjectsData.commits.info.end()) {
           ++itCommitInfo->second.reachability;
         }
@@ -1184,7 +1156,7 @@ void RepoAnalysis::setReachabilityFromRefs()
       {
         OdbObjectsData::iterTreeInfo itTreeInfo =
         m_odbObjectsData.trees.info.find(ref.first);
-      
+
         if (itTreeInfo != m_odbObjectsData.trees.info.end()) {
           ++itTreeInfo->second.reachability;
         }
@@ -1194,7 +1166,7 @@ void RepoAnalysis::setReachabilityFromRefs()
       {
         OdbObjectsData::iterBlobInfo itBlobInfo =
         m_odbObjectsData.blobs.info.find(ref.first);
-      
+
         if (itBlobInfo != m_odbObjectsData.blobs.info.end()) {
           ++itBlobInfo->second.reachability;
         }
@@ -1204,7 +1176,7 @@ void RepoAnalysis::setReachabilityFromRefs()
       {
         OdbObjectsData::iterTagInfo itTagInfo =
         m_odbObjectsData.tags.info.find(ref.first);
-      
+
         if (itTagInfo != m_odbObjectsData.tags.info.end()) {
           ++itTagInfo->second.reachability;
         }
@@ -1275,7 +1247,7 @@ void RepoAnalysis::pruneUnreachableTags()
       itTagUnrch != m_odbObjectsData.tags.unreachables.end(); ++itTagUnrch)
     {
       OdbObjectsData::iterTagInfo itTagInfo = m_odbObjectsData.tags.info.find(*itTagUnrch);
-    
+
       if (itTagInfo != m_odbObjectsData.tags.info.end()) {
         const std::string &oidTarget = itTagInfo->second.oidTarget;
         switch (itTagInfo->second.typeTarget) {
@@ -1346,7 +1318,7 @@ void RepoAnalysis::pruneUnreachableCommits()
       itCommitUnrch != m_odbObjectsData.commits.unreachables.end(); ++itCommitUnrch)
     {
       OdbObjectsData::iterCommitInfo itCommitInfo = m_odbObjectsData.commits.info.find(*itCommitUnrch);
-    
+
       if (itCommitInfo != m_odbObjectsData.commits.info.end())
       {
         // decrease commit's parents reachability and add them as newUnreachable
@@ -1354,7 +1326,7 @@ void RepoAnalysis::pruneUnreachableCommits()
         for (size_t i = 0; i < numParents; ++i) {
           OdbObjectsData::iterCommitInfo itParentCommitInfo =
             m_odbObjectsData.commits.info.find(itCommitInfo->second.parents.at(i));
-          
+
           if (itParentCommitInfo != m_odbObjectsData.commits.info.end()) {
             if (--itParentCommitInfo->second.reachability == OdbObjectsData::kUnreachable) {
               newUnreachables.emplace(itParentCommitInfo->first);
@@ -1392,7 +1364,7 @@ void RepoAnalysis::pruneUnreachableTrees()
       itTreeUnrch != m_odbObjectsData.trees.unreachables.end(); ++itTreeUnrch)
     {
       OdbObjectsData::iterTreeInfo itTreeInfo = m_odbObjectsData.trees.info.find(*itTreeUnrch);
-    
+
       if (itTreeInfo != m_odbObjectsData.trees.info.end()) {
         // decrease reachability of the entry blobs
         for (auto &blob : itTreeInfo->second.entryBlobs) {
@@ -1500,7 +1472,7 @@ bool RepoAnalysis::statsHistoryAndBiggestCheckouts()
 
 /**
  * RepoAnalysis::calculateBiggestCheckouts
- * 
+ *
  * Once threads have collected data from objects and unreachable objects
  * have been pruned, biggest checkouts can be calculated.
  * Threads have already collected partial non-recursive tree statistics.
@@ -1541,7 +1513,7 @@ bool RepoAnalysis::calculateBiggestCheckouts()
 
 /**
  * RepoAnalysis::calculateTreeStatistics
- * 
+ *
  * Calculates tree statistics recursively, considering individual tree's statistics
  * have already been calculated.
  * The maximum number of recursive calls depend directly on the maximum path depth of
@@ -1632,7 +1604,7 @@ bool RepoAnalysis::calculateMaxTagDepth()
 
 /**
  * RepoAnalysis::calculateTagDepth
- * 
+ *
  * Calculates recursively the tag depth of the oidTag passed as a parameter.
  * Returns an iterator to the tag info container, or to end if something went wrong.
  */
@@ -1808,7 +1780,7 @@ NAN_METHOD(GitRepository::Statistics)
    baton->error = NULL;
    baton->repo = Nan::ObjectWrap::Unwrap<GitRepository>(info.This())->GetValue();
    baton->out = static_cast<void *>(new RepoAnalysis(baton->repo));
-   
+
   Nan::Callback *callback = new Nan::Callback(Local<Function>::Cast(info[info.Length() - 1]));
   std::map<std::string, std::shared_ptr<nodegit::CleanupHandle>> cleanupHandles;
   StatisticsWorker *worker = new StatisticsWorker(baton, callback, cleanupHandles);
